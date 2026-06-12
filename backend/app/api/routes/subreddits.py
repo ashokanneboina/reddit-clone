@@ -8,7 +8,7 @@ from app.schemas.schemas import SubredditCreate, SubredditResponse
 
 router = APIRouter()
 
-@router.get("/", response_model=List[SubredditResponse])
+@router.get("", response_model=List[SubredditResponse])
 def read_subreddits(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -20,7 +20,7 @@ def read_subreddits(
     subreddits = db.query(Subreddit).offset(skip).limit(limit).all()
     return subreddits
 
-@router.post("/", response_model=SubredditResponse)
+@router.post("", response_model=SubredditResponse)
 def create_subreddit(
     *,
     db: Session = Depends(deps.get_db),

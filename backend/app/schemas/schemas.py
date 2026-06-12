@@ -36,6 +36,15 @@ class SubredditResponse(SubredditBase):
     class Config:
         from_attributes = True
 
+# --- Media Schemas ---
+class MediaResponse(BaseModel):
+    id: int
+    filename: str
+    content_type: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
 # --- Post Schemas ---
 class PostBase(BaseModel):
     title: str
@@ -52,6 +61,7 @@ class PostResponse(PostBase):
     created_at: datetime
     author: UserResponse
     subreddit: SubredditResponse
+    media: List[MediaResponse] = []
     class Config:
         from_attributes = True
 

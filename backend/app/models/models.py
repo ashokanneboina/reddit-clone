@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, DateTime, LargeBinary
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.session import Base
@@ -47,6 +47,20 @@ class Post(Base):
     subreddit = relationship("Subreddit", back_populates="posts")
     comments = relationship("Comment", back_populates="post")
     votes = relationship("Vote", back_populates="post")
+    media = relationship("Media", back_populates="post", cascade="all, delete-orphan")
+
+
+class Media(Base):
+    __tablename__ = "media"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.id"))
+    filename = Column(String, nullable=False)
+    content_type = Column(String, nullable=False)
+    data = Column(LargeBinary, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    post = relationship("Post", back_populates="media")
 
 
 class Comment(Base):

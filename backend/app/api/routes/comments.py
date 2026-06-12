@@ -22,7 +22,7 @@ def read_comments_for_post(
     comments = db.query(Comment).filter(Comment.post_id == post_id).order_by(desc(Comment.created_at)).offset(skip).limit(limit).all()
     return comments
 
-@router.post("/", response_model=CommentResponse)
+@router.post("", response_model=CommentResponse)
 def create_comment(
     *,
     db: Session = Depends(deps.get_db),

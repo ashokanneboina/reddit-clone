@@ -1,5 +1,5 @@
 from typing import Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -9,7 +9,7 @@ from app.schemas.schemas import PostCreate, PostResponse
 
 router = APIRouter()
 
-@router.get("/", response_model=List[PostResponse])
+@router.get("", response_model=List[PostResponse])
 def read_posts(
     db: Session = Depends(deps.get_db),
     skip: int = 0,
@@ -30,30 +30,50 @@ def read_posts(
     posts = query.order_by(desc(Post.created_at)).offset(skip).limit(limit).all()
     return posts
 
-@router.post("/", response_model=PostResponse)
+@router.post("", response_model=PostResponse)
 def create_post(
     *,
     db: Session = Depends(deps.get_db),
-    post_in: PostCreate,
+    title: str = Form(...),
+    content: Optional[str] = Form(None),
+    type: str = Form("text"),
+    subreddit_id: int = Form(...),
+    files: List[UploadFile] = File(None),
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
     """
     Create new post.
     """
-    subreddit = db.query(Subreddit).filter(Subreddit.id == post_in.subreddit_id).first()
+    subreddit = db.query(Subreddit).filter(Subreddit.id == subreddit_id).first()
     if not subreddit:
         raise HTTPException(status_code=404, detail="Subreddit not found")
         
     post = Post(
-        title=post_in.title,
-        content=post_in.content,
-        type=post_in.type,
-        subreddit_id=post_in.subreddit_id,
+        title=title,
+        content=content,
+        type=type,
+        subreddit_id=subreddit_id,
         author_id=current_user.id
     )
     db.add(post)
     db.commit()
     db.refresh(post)
+
+    if files:
+        from app.models.models import Media
+        for file in files:
+            if file.filename:
+                file_data = file.file.read()
+                media_item = Media(
+                    post_id=post.id,
+                    filename=file.filename,
+                    content_type=file.content_type or "application/octet-stream",
+                    data=file_data
+                )
+                db.add(media_item)
+        db.commit()
+        db.refresh(post)
+
     return post
 
 @router.get("/{id}", response_model=PostResponse)
